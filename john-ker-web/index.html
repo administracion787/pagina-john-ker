@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>John Ker y su Amigo Real — Viajando el mundo en moto</title>
+<meta name="description" content="John Ker recorre el mundo en su Harley-Davidson Pan America 1250 junto a Elvis, su amigo real. Rutas reales, historias sin filtros, capítulo a capítulo.">
+<meta property="og:title" content="John Ker y su Amigo Real">
+<meta property="og:description" content="Viajar no siempre es llegar a un destino. A veces es tomar la decisión de seguir.">
+<meta property="og:image" content="img/fotos/intro-john-elvis.jpg">
+<meta name="theme-color" content="#0b0a09">
+<link rel="icon" href="img/marca/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&family=Permanent+Marker&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root{
+    --bg:#0b0a09; --bg2:#141210; --card:#1c1916; --line:#2f2a24;
+    --text:#f4eee4; --muted:#aba193;
+    --fire:#ff7a1a; --amber:#ffb627; --red:#d11f16; --chrome:#d9dde0; --leather:#6b2f1c;
+    --radius:16px;
+    --glow:0 0 0 1px rgba(255,122,26,.35),0 20px 60px -10px rgba(255,90,0,.45);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth;overflow-x:clip}
+  body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  img,video{max-width:100%;display:block}
+  a{color:inherit;text-decoration:none}
+  .wrap{width:min(1200px,92vw);margin-inline:auto}
+  h1,h2,h3{font-family:Anton,Impact,sans-serif;font-weight:400;letter-spacing:.5px;line-height:1.05;text-transform:uppercase}
+  .script{font-family:"Permanent Marker",cursive;color:var(--amber);text-transform:none;letter-spacing:0}
+  .fire-text{background:linear-gradient(180deg,#fff3c4 0%,var(--amber) 35%,var(--fire) 70%,#c2410c 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:.8rem;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--amber)}
+  .eyebrow::before{content:"";width:28px;height:2px;background:linear-gradient(90deg,var(--fire),var(--amber))}
+  section{padding:110px 0;position:relative}
+  .sec-head{display:flex;justify-content:space-between;align-items:end;gap:24px;flex-wrap:wrap;margin-bottom:44px}
+  .sec-head h2{font-size:clamp(2.4rem,5.4vw,4rem);margin-top:10px}
+  .sec-head p{color:var(--muted);max-width:460px}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+  /* Botones */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:14px 26px;border-radius:999px;font-weight:800;font-size:.95rem;letter-spacing:.3px;transition:transform .2s,box-shadow .2s,background .2s;border:2px solid transparent;cursor:pointer;font-family:inherit}
+  .btn:hover{transform:translateY(-3px)}
+  .btn-fire{background:linear-gradient(135deg,#ff9a1f,#e24a0b);color:#140a02;box-shadow:0 10px 30px -8px rgba(255,100,0,.7)}
+  .btn-fire:hover{box-shadow:0 14px 40px -6px rgba(255,100,0,.9)}
+  .btn-red{background:var(--red);color:#fff}
+  .btn-red:hover{background:#b81a12}
+  .btn-ghost{border-color:rgba(255,255,255,.3);color:#fff;background:rgba(255,255,255,.04);backdrop-filter:blur(6px)}
+  .btn-ghost:hover{border-color:var(--amber);color:var(--amber)}
+  .link-fire{background:none;border:0;color:var(--amber);font:inherit;font-weight:800;cursor:pointer;min-height:44px;padding:10px 0;display:inline-flex;align-items:center;gap:6px}
+  .link-fire:hover{color:var(--fire)}
+
+  /* Accesibilidad */
+  :focus-visible{outline:3px solid var(--amber);outline-offset:3px;border-radius:6px}
+  .skip{position:absolute;left:12px;top:-80px;z-index:300;background:var(--amber);color:#111;font-weight:800;padding:12px 18px;border-radius:8px}
+  .skip:focus{top:12px}
+
+  /* Intro animada */
+  .intro{position:fixed;inset:0;z-index:500;background:#000;display:grid;place-items:center;transition:opacity .8s ease,visibility .8s}
+  .intro video{width:100%;height:100%;object-fit:cover}
+  .intro.hide{opacity:0;visibility:hidden}
+  .intro button{position:absolute;bottom:28px;right:28px;min-height:44px;padding:10px 20px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.4);color:#fff;font:inherit;font-weight:700;cursor:pointer}
+
+  /* Nav */
+  header{position:fixed;inset:0 0 auto;z-index:50;transition:background .3s,transform .3s}
+  header.solid{background:rgba(11,10,9,.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:76px}
+  .logo img{height:52px;width:auto;filter:drop-shadow(0 4px 14px rgba(255,90,0,.35));transition:transform .3s}
+  .logo:hover img{transform:scale(1.05) rotate(-1deg)}
+  .menu{display:flex;gap:26px;align-items:center;font-weight:700;font-size:.92rem}
+  .menu a:not(.btn){position:relative;padding:12px 0}
+  .menu a:not(.btn)::after{content:"";position:absolute;left:0;right:100%;bottom:6px;height:2px;background:var(--fire);transition:right .25s}
+  .menu a:not(.btn):hover::after{right:0}
+  .burger{display:none;background:none;border:0;color:#fff;font-size:1.8rem;cursor:pointer;min-width:48px;min-height:48px}
+
+  /* HERO: bienvenida de John con fotos que cambian solas */
+  .hero{min-height:100svh;display:flex;align-items:center;padding:96px 0 130px;overflow:hidden;isolation:isolate;background:var(--bg)}
+  /* Las fotos ocupan la derecha y se funden con el texto: John nunca queda tapado */
+  .slides{position:absolute;top:0;bottom:0;right:0;width:64%;z-index:-3;-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 30%);mask-image:linear-gradient(90deg,transparent 0%,#000 30%)}
+  .slide{position:absolute;inset:0;opacity:0}
+  .slide.on{opacity:1}
+  .slide img{width:100%;height:100%;object-fit:cover}
+  .slide.on img{animation:kb 9s ease-out forwards}
+  @keyframes kb{to{transform:scale(1.08)}}
+  .hero::before{content:"";position:absolute;inset:0;z-index:-2;background:
+      linear-gradient(90deg,rgba(11,10,9,.6) 0%,rgba(11,10,9,.3) 40%,rgba(11,10,9,0) 60%),
+      linear-gradient(0deg,var(--bg) 0%,rgba(11,10,9,0) 30%),
+      radial-gradient(50% 60% at 20% 70%,rgba(255,96,0,.22),transparent 70%)}
+  #sparks{position:absolute;inset:0;z-index:-1;width:100%;height:100%;pointer-events:none}
+  .welcome{max-width:600px}
+  .welcome .mini-logo{width:250px;filter:drop-shadow(0 6px 24px rgba(255,90,0,.5));margin-bottom:18px}
+  .hola{font-family:"Permanent Marker",cursive;color:var(--amber);font-size:clamp(1.5rem,3vw,2.2rem);display:flex;align-items:center;gap:12px}
+  .wave{display:inline-block;transform-origin:70% 70%;animation:wave 2.4s ease-in-out infinite}
+  @keyframes wave{0%,60%,100%{transform:rotate(0)}10%,30%{transform:rotate(16deg)}20%,40%{transform:rotate(-8deg)}}
+  .hero h1{font-size:clamp(3rem,7vw,6rem);line-height:.92;margin:6px 0 16px;text-shadow:0 6px 30px rgba(0,0,0,.6)}
+  .typed{font-size:clamp(1.1rem,2.2vw,1.45rem);font-weight:700;margin-bottom:16px;min-height:1.6em}
+  .typed b{color:var(--fire)}
+  .typed .caret{display:inline-block;width:3px;height:1.1em;background:var(--amber);margin-left:3px;vertical-align:-3px;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .hero .lead{font-size:clamp(1.02rem,1.6vw,1.18rem);color:#e9e0d1;max-width:560px;margin-bottom:30px;text-shadow:0 2px 12px rgba(0,0,0,.7)}
+  .hero .lead b{color:var(--amber)}
+  .ctas{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+  .firma{font-family:"Permanent Marker",cursive;color:#e9e0d1;font-size:1.25rem;margin-top:20px;opacity:.9}
+  .slide-info{position:absolute;right:max(4vw,24px);bottom:150px;display:flex;flex-direction:column;align-items:flex-end;gap:12px;z-index:2}
+  .slide-place{background:rgba(11,10,9,.75);backdrop-filter:blur(8px);border:1px solid rgba(255,182,39,.35);padding:10px 16px;border-radius:999px;font-weight:700;font-size:.92rem;transition:opacity .4s}
+  .dots{display:flex;gap:8px}
+  .dots button{width:44px;height:44px;border:0;background:none;cursor:pointer;display:grid;place-items:center;padding:0}
+  .dots button i{display:block;width:34px;height:4px;border-radius:4px;background:rgba(255,255,255,.3);overflow:hidden;position:relative}
+  .dots button i::after{content:"";position:absolute;inset:0;background:var(--amber);transform:scaleX(0);transform-origin:left}
+  .dots button.on i::after{animation:prog var(--dur,6s) linear forwards}
+  .dots button.done i::after{transform:scaleX(1)}
+  @keyframes prog{to{transform:scaleX(1)}}
+  .stats-bar{position:absolute;left:0;right:0;bottom:28px;z-index:2}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;background:rgba(15,12,10,.7);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.1);border-radius:20px;overflow:hidden}
+  .stat{padding:16px 22px;border-right:1px solid rgba(255,255,255,.08)}
+  .stat:last-child{border-right:0}
+  .stat b{font-family:Anton,sans-serif;font-size:2.1rem;font-weight:400;display:block;line-height:1}
+  .stat span{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;font-weight:700}
+
+  /* Cinta de lugares (inclinada, con brillo de fuego) */
+  .ticker{position:relative;z-index:3;background:linear-gradient(90deg,#c2410c,#ff7a1a 30%,#ffb627 50%,#ff7a1a 70%,#c2410c);background-size:200% 100%;color:#170a02;overflow:hidden;transform:rotate(-1.2deg);margin:-14px -2vw 0;box-shadow:0 0 30px rgba(255,90,0,.55),0 10px 30px rgba(255,90,0,.35);animation:llama 6s linear infinite}
+  @keyframes llama{to{background-position:-200% 0}}
+  .ticker-track{display:flex;width:max-content;animation:marquee 38s linear infinite}
+  .ticker span{font-family:Anton,sans-serif;font-size:1.5rem;letter-spacing:1px;padding:14px 22px;white-space:nowrap;text-transform:uppercase}
+  .ticker span::after{content:"🔥";margin-left:40px;font-size:1.1rem}
+  @keyframes marquee{to{transform:translateX(-50%)}}
+  .burn-cv{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}
+  .js-burn img[data-burn]{visibility:hidden}
+
+  /* Carrusel automático de la ruta */
+  .carrusel{padding:70px 0 10px}
+  .car-head{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+  .car-head h2{font-size:clamp(1.8rem,3.6vw,2.6rem);margin-top:8px}
+  .car-btns{display:flex;gap:10px}
+  .car-btns button{width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:#fff;font-size:1.3rem;cursor:pointer;transition:border-color .2s,background .2s}
+  .car-btns button:hover{border-color:var(--fire);background:#2a1d14}
+  .track{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;padding:6px 4vw 18px;margin:0 -4vw;scrollbar-width:none}
+  .track::-webkit-scrollbar{display:none}
+  .card-ruta{flex:0 0 clamp(240px,26vw,330px);scroll-snap-align:start;position:relative;aspect-ratio:3/4;border-radius:20px;overflow:hidden;cursor:pointer;border:0;padding:0;background:#000;color:#fff;text-align:left;font:inherit;transition:transform .3s,box-shadow .3s}
+  .card-ruta:hover{transform:translateY(-6px);box-shadow:0 20px 40px -12px rgba(255,90,0,.5)}
+  .card-ruta img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .6s}
+  .card-ruta:hover img{transform:scale(1.08)}
+  .card-ruta::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 35%,rgba(0,0,0,.9))}
+  .card-ruta .txt{position:absolute;left:18px;right:18px;bottom:18px;z-index:1}
+  .card-ruta small{color:var(--amber);font-weight:800;letter-spacing:2px;font-size:.75rem;text-transform:uppercase}
+  .card-ruta b{display:block;font-family:Anton,sans-serif;font-weight:400;font-size:1.5rem;line-height:1.1;text-transform:uppercase;margin-top:4px}
+  .card-ruta .flag{position:absolute;top:14px;left:14px;z-index:1;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);border-radius:999px;padding:6px 12px;font-size:.8rem;font-weight:700}
+
+  /* Último capítulo */
+  .latest{display:grid;grid-template-columns:1.4fr 1fr;gap:40px;align-items:center;background:linear-gradient(135deg,#1d1814,#120f0c);border:1px solid var(--line);border-radius:28px;padding:28px;position:relative;overflow:hidden}
+  .latest::before{content:"";position:absolute;right:-120px;top:-120px;width:340px;height:340px;background:radial-gradient(circle,rgba(255,110,0,.25),transparent 70%)}
+  .thumb{border-radius:18px;overflow:hidden;position:relative;cursor:pointer;aspect-ratio:16/9;background:#000;border:0;padding:0;width:100%}
+  .thumb img{width:100%;height:100%;object-fit:cover;transition:transform .5s}
+  .thumb:hover img{transform:scale(1.05)}
+  .play{position:absolute;inset:0;display:grid;place-items:center}
+  .play i{width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,#ff9a1f,#e24a0b);display:grid;place-items:center;box-shadow:0 0 0 0 rgba(255,110,0,.6);animation:pulse 2s infinite}
+  .play i::after{content:"";border-left:24px solid #140a02;border-top:15px solid transparent;border-bottom:15px solid transparent;margin-left:6px}
+  @keyframes pulse{70%{box-shadow:0 0 0 22px rgba(255,110,0,0)}100%{box-shadow:0 0 0 0 rgba(255,110,0,0)}}
+  .latest h2{font-size:clamp(1.8rem,3vw,2.6rem);margin:12px 0 10px}
+  .latest p{color:var(--muted);margin:12px 0 24px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+  .tag{display:inline-block;background:var(--red);color:#fff;font-weight:800;font-size:.75rem;padding:5px 11px;border-radius:6px;letter-spacing:1px;text-transform:uppercase}
+  .place{color:var(--amber);font-weight:700;font-size:.92rem}
+
+  /* Historia */
+  .story{display:grid;grid-template-columns:1fr 1.1fr;gap:64px;align-items:start}
+  .story-img{position:sticky;top:110px;border-radius:28px;overflow:hidden;aspect-ratio:4/5;box-shadow:var(--glow)}
+  .story-img img{width:100%;height:100%;object-fit:cover;object-position:62% 50%}
+  .story-img .quote{position:absolute;left:18px;right:18px;bottom:18px;background:rgba(11,10,9,.85);backdrop-filter:blur(6px);padding:18px 20px;border-radius:14px;border-left:4px solid var(--fire);font-family:"Permanent Marker",cursive;font-size:1.15rem;line-height:1.4}
+  .story h2{font-size:clamp(2.6rem,5.4vw,4.2rem);margin:10px 0 20px}
+  .story .intro-txt{color:#d8cfbf;font-size:1.08rem;margin-bottom:36px}
+  .timeline{position:relative;padding-left:36px}
+  .timeline::before{content:"";position:absolute;left:9px;top:8px;bottom:8px;width:2px;background:linear-gradient(var(--amber),var(--fire),var(--red))}
+  .tl{position:relative;margin-bottom:30px}
+  .tl::before{content:"";position:absolute;left:-33px;top:6px;width:18px;height:18px;border-radius:50%;background:var(--bg);border:3px solid var(--fire);box-shadow:0 0 14px rgba(255,110,0,.6)}
+  .tl small{color:var(--amber);font-weight:800;letter-spacing:2px;text-transform:uppercase;font-size:.75rem}
+  .tl h3{font-size:1.5rem;margin:2px 0 6px}
+  .tl p{color:#cfc6b6}
+
+  /* Elvis */
+  #elvis{background:radial-gradient(70% 60% at 80% 40%,rgba(255,182,39,.08),transparent 70%),var(--bg2);overflow:hidden}
+  .elvis{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+  .elvis h2{font-size:clamp(2.6rem,6vw,4.6rem);margin:10px 0 18px}
+  .elvis p{color:#d8cfbf;font-size:1.06rem;margin-bottom:16px}
+  .paws{position:absolute;inset:0;pointer-events:none;opacity:.06;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 24 24' fill='%23ffb627'%3E%3Ccircle cx='6' cy='9' r='2.2'/%3E%3Ccircle cx='10' cy='5.5' r='2.2'/%3E%3Ccircle cx='14.5' cy='5.5' r='2.2'/%3E%3Ccircle cx='18.5' cy='9' r='2.2'/%3E%3Cpath d='M12 11c-3 0-6 4.5-6 7 0 1.6 1.3 2.5 3 2.5 1.2 0 2-.6 3-.6s1.8.6 3 .6c1.7 0 3-.9 3-2.5 0-2.5-3-7-6-7z'/%3E%3C/svg%3E");background-size:120px;transform:rotate(-12deg) scale(1.3)}
+  .collage{position:relative;height:520px}
+  .polaroid{position:absolute;background:#f6f0e4;padding:12px 12px 46px;border-radius:6px;box-shadow:0 24px 50px rgba(0,0,0,.55);transition:transform .35s;cursor:pointer;border:0}
+  .polaroid img{width:100%;height:100%;object-fit:cover;border-radius:2px}
+  .polaroid span{position:absolute;left:0;right:0;bottom:10px;text-align:center;font-family:"Permanent Marker",cursive;color:#2a1a10;font-size:1.05rem}
+  .polaroid.p1{width:68%;height:62%;left:0;top:4%;transform:rotate(-5deg)}
+  .polaroid.p2{width:64%;height:56%;right:0;bottom:0;transform:rotate(4deg)}
+  .polaroid:hover{transform:rotate(0) scale(1.04);z-index:3}
+  .p1 img{object-position:48% 30%}
+  .p2 img{object-position:60% 35%}
+  .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+
+  /* La máquina */
+  #moto{background:linear-gradient(180deg,var(--bg) 0%,#101214 50%,var(--bg) 100%);overflow:hidden}
+  .moto-big{font-family:Anton,sans-serif;font-size:clamp(5rem,17vw,15rem);line-height:.8;color:transparent;-webkit-text-stroke:2px rgba(217,221,224,.12);position:absolute;left:50%;top:70px;transform:translateX(-50%);white-space:nowrap;pointer-events:none;user-select:none}
+  .moto{display:grid;grid-template-columns:1.25fr 1fr;gap:56px;align-items:center;position:relative}
+  .moto-img{position:relative;border-radius:28px;overflow:hidden;aspect-ratio:540/380;box-shadow:0 0 0 1px rgba(217,221,224,.25),0 30px 80px -10px rgba(0,0,0,.8),0 0 80px -20px rgba(217,221,224,.25)}
+  .moto-img img{width:100%;height:100%;object-fit:cover;transition:transform 6s ease}
+  .moto-img:hover img{transform:scale(1.08)}
+  .moto-img .shine{position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.18) 45%,transparent 60%);transform:translateX(-100%);animation:shine 5s ease-in-out infinite}
+  @keyframes shine{40%,100%{transform:translateX(100%)}}
+  .chrome{background:linear-gradient(180deg,#ffffff 0%,#c9ced2 45%,#7d858b 55%,#e6e9eb 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .moto h2{font-size:clamp(2.4rem,5vw,4rem);margin:10px 0 6px}
+  .moto .model{font-family:"Permanent Marker",cursive;color:var(--amber);font-size:1.4rem;margin-bottom:18px}
+  .specs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:22px 0}
+  .spec{background:linear-gradient(160deg,#1e2124,#141618);border:1px solid #2c3135;border-radius:14px;padding:16px}
+  .spec small{display:block;color:#8f989e;font-size:.75rem;letter-spacing:2px;text-transform:uppercase;font-weight:800}
+  .spec b{font-size:1.05rem}
+  .swatch{display:inline-block;width:14px;height:14px;border-radius:50%;background:linear-gradient(135deg,#9aa1a6,#4d5357);vertical-align:-2px;margin-right:6px;border:1px solid #c9ced2}
+  .ride{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:56px}
+  .ride button{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;cursor:pointer;color:inherit;font:inherit;text-align:left;transition:transform .2s,border-color .2s;padding:0}
+  .ride button:hover{transform:translateY(-4px);border-color:var(--chrome)}
+  .ride img{aspect-ratio:16/9;object-fit:cover;width:100%}
+  .ride div{padding:12px 14px}
+  .ride small{color:var(--amber);font-weight:800;font-size:.75rem;letter-spacing:1px}
+  .ride b{display:block;font-size:.95rem;line-height:1.3}
+  .casa{margin-top:22px;display:flex;align-items:center;gap:18px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;cursor:pointer;width:100%;color:inherit;font:inherit;text-align:left}
+  .casa img{width:150px;aspect-ratio:16/9;object-fit:cover;border-radius:10px}
+  .casa:hover{border-color:var(--amber)}
+
+  /* Mapa */
+  #mapa{background:var(--bg2)}
+  .map-grid{display:grid;grid-template-columns:2fr 1fr;gap:24px}
+  #map{height:520px;border-radius:22px;border:1px solid var(--line);z-index:1;background:#1a1916}
+  #map .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9) saturate(.4)}
+  .leaflet-touch .leaflet-bar a{width:44px;height:44px;line-height:44px}
+  .legs{display:flex;flex-direction:column;gap:12px}
+  .leg{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;cursor:pointer;transition:border-color .2s,transform .2s;text-align:left;color:inherit;font-family:inherit}
+  .leg:hover,.leg.on{border-color:var(--fire);transform:translateX(4px)}
+  .leg small{color:var(--amber);font-weight:800;letter-spacing:2px;text-transform:uppercase;font-size:.75rem}
+  .leg h3{font-size:1.4rem;margin:2px 0}
+  .leg p{color:var(--muted);font-size:.9rem}
+  .leaflet-popup-content-wrapper{background:var(--card);color:var(--text);border-radius:12px}
+  .leaflet-popup-tip{background:var(--card)}
+  .leaflet-popup-content{margin:12px;font-family:Inter,sans-serif}
+  .pop img{width:220px;border-radius:8px;margin-bottom:8px}
+  .pop b{display:block;font-size:.95rem;line-height:1.3;margin-bottom:6px}
+  .pop .row{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:.82rem;color:var(--muted);margin-top:4px}
+  .pop button{background:none;border:0;color:var(--amber);font-weight:800;cursor:pointer;min-width:32px;min-height:32px;font-size:1rem}
+  .pin{width:18px;height:18px;border-radius:50%;background:var(--fire);border:3px solid #111;box-shadow:0 0 0 4px rgba(255,122,26,.35),0 0 18px rgba(255,122,26,.8)}
+
+  /* Capítulos */
+  .filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px}
+  .chip{background:transparent;border:1px solid var(--line);color:var(--text);padding:9px 18px;min-height:44px;border-radius:999px;font-weight:700;cursor:pointer;font-family:inherit;font-size:.9rem;transition:all .2s}
+  .chip:hover{border-color:var(--amber)}
+  .chip.on{background:linear-gradient(135deg,#ff9a1f,#e24a0b);border-color:transparent;color:#140a02}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:22px}
+  .ep{background:var(--card);border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);cursor:pointer;transition:transform .25s,border-color .25s,box-shadow .25s;text-align:left;color:inherit;font-family:inherit;display:block;width:100%;padding:0;animation:pop .45s both}
+  .ep:hover{transform:translateY(-6px);border-color:var(--fire);box-shadow:0 18px 40px -12px rgba(255,90,0,.45)}
+  @keyframes pop{from{opacity:0;transform:translateY(16px)}}
+  .ep .im{position:relative;aspect-ratio:16/9;overflow:hidden;background:#000}
+  .ep .im img{width:100%;height:100%;object-fit:cover;transition:transform .5s}
+  .ep:hover .im img{transform:scale(1.07)}
+  .ep .num{position:absolute;top:10px;left:10px;background:var(--amber);color:#111;font-family:Anton,sans-serif;padding:2px 10px;border-radius:6px;font-size:1rem}
+  .ep .dur{position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.8);font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:4px}
+  .ep .body{padding:16px 18px 18px}
+  .ep h3{font-family:Inter,sans-serif;text-transform:none;letter-spacing:0;font-size:1rem;font-weight:700;line-height:1.35;margin-bottom:8px}
+  .ep .meta{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:.8rem}
+  .ep .meta span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .more{text-align:center;margin-top:36px}
+  .sync{color:var(--muted);font-size:.8rem;margin-top:14px;text-align:center}
+
+  /* Instagram */
+  .ig-head{display:flex;align-items:center;gap:18px;margin-bottom:28px;flex-wrap:wrap}
+  .ig-head img{width:72px;height:72px;border-radius:50%;border:3px solid transparent;background:linear-gradient(var(--bg),var(--bg)) padding-box,linear-gradient(45deg,#f9ce34,#ee2a7b,#6228d7) border-box;object-fit:cover}
+  .ig-head b{font-size:1.1rem;display:block}
+  .ig-head span{color:var(--muted);font-size:.9rem}
+  .ig-head .btn{margin-left:auto}
+  .ig-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+  .ig-grid a{position:relative;aspect-ratio:9/16;border-radius:12px;overflow:hidden;background:#000}
+  .ig-grid a.wide{grid-column:span 2;aspect-ratio:auto}
+  .ig-grid img{width:100%;height:100%;object-fit:cover;transition:transform .4s,opacity .3s}
+  .ig-grid a:hover img{transform:scale(1.06);opacity:.75}
+
+  /* Marcas */
+  .brands{display:grid;grid-template-columns:1.1fr 1fr;gap:48px;align-items:center}
+  .brands h2{font-size:clamp(2.2rem,4.6vw,3.6rem);margin:10px 0 20px}
+  .brands p{color:var(--muted);margin-bottom:24px}
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px;transition:border-color .2s}
+  .kpi:hover{border-color:var(--fire)}
+  .kpi b{font-family:Anton,sans-serif;font-weight:400;font-size:2.8rem;display:block;line-height:1}
+  .kpi span{color:var(--muted);font-size:.85rem}
+
+  /* CTA final */
+  .cta{position:relative;overflow:hidden;border-radius:32px;padding:90px 48px;text-align:center;background:url("img/fotos/intro-john-elvis.jpg") center bottom/cover}
+  /* El fondo es la ilustración de John y Elvis; se oscurece arriba para que no compita con el logo */
+  .cta::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,10,9,.97) 0%,rgba(11,10,9,.9) 40%,rgba(11,10,9,.7) 75%,rgba(11,10,9,.85) 100%)}
+  .cta>*{position:relative}
+  .cta img.lg{width:min(460px,80%);margin:0 auto 10px;filter:drop-shadow(0 8px 30px rgba(255,90,0,.5))}
+  .cta h2{font-size:clamp(2rem,5vw,3.6rem);margin-bottom:12px}
+  .cta p{color:#e0d8ca;max-width:560px;margin:0 auto 32px}
+  .socials{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .soc{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:12px 22px;border-radius:999px;font-weight:800;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);transition:background .2s,transform .2s}
+  .soc:hover{background:rgba(255,255,255,.18);transform:translateY(-3px)}
+  .soc svg{width:20px;height:20px}
+  .soc.yt{background:var(--red);border-color:var(--red)}
+  .soc.pend{opacity:.55}
+
+  footer{padding:40px 0;border-top:1px solid var(--line);color:var(--muted);font-size:.85rem}
+  footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center}
+  footer img{height:44px;width:auto}
+  footer .mini{display:flex;gap:16px;flex-wrap:wrap}
+  footer .mini a{display:inline-block;padding:11px 2px}
+  footer .mini a:hover{color:var(--amber)}
+
+  /* Modal */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:100;display:none;overflow-y:auto;padding:76px 20px 30px}
+  .modal.open{display:block}
+  .modal .box{width:min(1000px,100%);margin:0 auto}
+  .modal .frame{aspect-ratio:16/9;background:#000;border-radius:14px;overflow:hidden}
+  .modal iframe{width:100%;height:100%;border:0}
+  .modal .info{padding:22px 4px}
+  .modal .info h3{font-size:clamp(1.5rem,3vw,2.2rem);margin:8px 0 6px}
+  .modal .info p{color:#cfc7b8;white-space:pre-line;margin-top:12px;max-width:800px}
+  .modal .nav2{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+  .modal .x{position:fixed;top:14px;right:18px;width:48px;height:48px;border-radius:50%;font-size:2rem;line-height:1;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);cursor:pointer;z-index:2}
+
+  .reveal{opacity:0;transform:translateY(30px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+
+  @media (max-width:960px){
+    section{padding:80px 0}
+    .menu{position:fixed;inset:76px 0 auto;flex-direction:column;background:rgba(11,10,9,.97);padding:24px;gap:10px;display:none;border-bottom:1px solid var(--line)}
+    .menu.open{display:flex}
+    .burger{display:block}
+    .latest,.map-grid,.story,.elvis,.moto,.brands{grid-template-columns:1fr}
+    /* Celular: John arriba en grande y el saludo debajo */
+    .hero{flex-direction:column;align-items:stretch;justify-content:flex-end;min-height:auto;padding:calc(50svh) 0 28px}
+    .slides{width:100%;height:64svh;bottom:auto;-webkit-mask-image:linear-gradient(180deg,#000 55%,transparent 100%);mask-image:linear-gradient(180deg,#000 55%,transparent 100%)}
+    .hero::before{background:linear-gradient(180deg,rgba(11,10,9,.55) 0%,rgba(11,10,9,0) 22%),radial-gradient(60% 40% at 30% 80%,rgba(255,96,0,.18),transparent 70%)}
+    .slide-info{bottom:auto;top:calc(50svh - 70px);right:16px}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .stat:nth-child(2){border-right:0}
+    .stat:nth-child(-n+2){border-bottom:1px solid rgba(255,255,255,.08)}
+    .stats-bar{position:relative;bottom:auto;margin-top:28px}
+    .story-img{position:relative;top:0;aspect-ratio:4/3}
+    .collage{height:420px}
+    .moto-img{order:-1}
+    .ride{grid-template-columns:repeat(2,1fr)}
+    #map{height:380px}
+    .legs{flex-direction:row;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px}
+    .leg{min-width:240px;scroll-snap-align:start}
+    .leg:hover,.leg.on{transform:none}
+    .ig-grid{grid-template-columns:repeat(3,1fr)}
+    .ig-grid a.wide{grid-column:span 3;aspect-ratio:4/3}
+    .ig-head .btn{margin-left:0}
+    .cta{padding:60px 22px}
+  }
+  @media (max-width:520px){
+    .collage{height:400px}
+    .slide-place{font-size:.8rem;padding:8px 12px}
+    .dots button i{width:22px}
+    .card-ruta{flex-basis:72vw}
+    .ticker span{font-size:1.15rem}
+    .stat{padding:12px 16px}
+    .stat b{font-size:1.7rem}
+    .casa img{width:110px}
+  }
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<a class="skip" href="#ultimo">Saltar al contenido</a>
+
+<!-- Intro con el logo animado (una vez por visita) -->
+<div class="intro" id="intro" aria-hidden="true">
+  <video id="introVideo" muted playsinline preload="auto" poster="img/marca/intro-poster.jpg"></video>
+  <button type="button" id="skipIntro">Saltar intro ›</button>
+</div>
+
+<header id="top">
+  <div class="wrap nav">
+    <a href="#" class="logo" aria-label="John Ker y su Amigo Real — inicio"><img src="img/marca/logo-360.webp" alt="John Ker y su Amigo Real"></a>
+    <button class="burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="menu">☰</button>
+    <nav class="menu" id="menu" aria-label="Principal">
+      <a href="#historia">Historia</a>
+      <a href="#elvis">Elvis</a>
+      <a href="#moto">La Moto</a>
+      <a href="#mapa">La Ruta</a>
+      <a href="#capitulos">Capítulos</a>
+      <a class="btn btn-red" href="https://www.youtube.com/@JOHNKERYSUAMIGOREALOFICIAL?sub_confirmation=1" target="_blank" rel="noopener">▶ Suscribirse</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO: John da la bienvenida -->
+<section class="hero" aria-label="Bienvenida">
+  <div class="slides" id="slides" aria-hidden="true"></div>
+  <canvas id="sparks" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div class="welcome">
+      <div class="hola reveal">¡Hola! Soy John <span class="wave" aria-hidden="true">👋</span></div>
+      <h1 class="reveal">Bienvenido<br>a mi <span class="fire-text">ruta</span><span class="sr"> — John Ker y su Amigo Real</span></h1>
+      <p class="typed reveal" aria-live="off">Hoy te llevo a <b id="typed"></b><span class="caret" aria-hidden="true"></span></p>
+      <p class="lead reveal">Recorro el mundo en mi <b>Harley-Davidson Pan America 1250</b> junto a <b>Elvis</b>, mi amigo real. Aquí no hay guiones ni filtros: solo la carretera, la gente que conocemos y lo que pasa cuando decides seguir.</p>
+      <div class="ctas reveal">
+        <button class="btn btn-fire" id="verUltimo">▶ Ver el último capítulo</button>
+        <a class="btn btn-ghost" href="#historia">Conoce mi historia</a>
+      </div>
+      <div class="firma reveal">— John &amp; Elvis 🐾</div>
+    </div>
+  </div>
+  <div class="slide-info">
+    <div class="slide-place" id="slidePlace"></div>
+    <div class="dots" id="dots" role="group" aria-label="Fotos de John"></div>
+  </div>
+  <div class="stats-bar">
+    <div class="wrap stats reveal">
+      <div class="stat"><b class="fire-text" data-count="caps">0</b><span>Capítulos</span></div>
+      <div class="stat"><b class="fire-text" data-to="6">0</b><span>Países</span></div>
+      <div class="stat"><b class="fire-text" data-to="3">0</b><span>Continentes</span></div>
+      <div class="stat"><b class="fire-text" data-count="views">0</b><span>Vistas</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="ticker" aria-hidden="true"><div class="ticker-track" id="ticker"></div></div>
+
+<!-- CARRUSEL AUTOMÁTICO DE LA RUTA -->
+<section class="carrusel" aria-label="La ruta en fotos">
+  <div class="wrap">
+    <div class="car-head reveal">
+      <div><span class="eyebrow">De parada en parada</span><h2>La ruta <span class="fire-text">hasta hoy</span></h2></div>
+      <div class="car-btns">
+        <button type="button" id="carPrev" aria-label="Anterior">←</button>
+        <button type="button" id="carNext" aria-label="Siguiente">→</button>
+      </div>
+    </div>
+    <div class="track" id="track" tabindex="0" aria-label="Lugares recorridos, avanza solo"></div>
+  </div>
+</section>
+
+<!-- ÚLTIMO CAPÍTULO -->
+<section id="ultimo" style="padding-top:80px">
+  <div class="wrap">
+    <div class="latest reveal" id="latest"></div>
+  </div>
+</section>
+
+<!-- HISTORIA -->
+<section id="historia">
+  <div class="wrap story">
+    <div class="story-img reveal">
+      <img data-burn src="img/fotos/john-baja.jpg" alt="John Ker en la carretera de Baja California">
+      <div class="quote">“Ese día entendí que ya no era Juan… empezaba a ser John Ker.”</div>
+    </div>
+    <div>
+      <div class="reveal">
+        <span class="eyebrow">Mi historia</span>
+        <h2>De Juan a <span class="fire-text">John Ker</span></h2>
+        <p class="intro-txt">Un viajero que decidió vivir la carretera como su hogar. Recorre el mundo en moto desde mucho antes de las cámaras, las redes sociales y los mapas digitales. Hoy lo cuenta capítulo a capítulo: sin guiones, sin destinos perfectos y sin filtros.</p>
+      </div>
+      <div class="timeline">
+        <div class="tl reveal">
+          <small>El origen · Cap. 01</small>
+          <h3>Atrapado cuando el mundo se detuvo</h3>
+          <p>Durante la pandemia, Juan quedó varado en una playa. Ese momento se volvió el punto de partida de la serie.</p>
+          <button class="link-fire" onclick="abrirCap(1)">▶ Ver capítulo 1</button>
+        </div>
+        <div class="tl reveal">
+          <small>La transformación · Cap. 02</small>
+          <h3>Nace John Ker</h3>
+          <p>La soledad, el silencio y las dudas lo empujaron a decidir su rumbo. El propósito de viajar empezó a pesar más que el miedo.</p>
+          <button class="link-fire" onclick="abrirCap(2)">▶ Ver capítulo 2</button>
+        </div>
+        <div class="tl reveal">
+          <small>Colombia · Cap. 03–19</small>
+          <h3>Medellín, Cartagena y Santa Fe de Antioquia</h3>
+          <p>Los alumbrados de Medellín, el fin de año en Entrerríos, la llegada del motor casa a Cartagena, el Caribe de Punta Arena y el Desfile de los Diablitos.</p>
+          <button class="link-fire" onclick="abrirCap(10)">▶ Ver la llegada del motor casa</button>
+        </div>
+        <div class="tl reveal">
+          <small>Baja California · Cap. 20–25</small>
+          <h3>El lugar que cambió su vida</h3>
+          <p>Compró su Pan America en Huntington Beach y volvió a San Felipe, donde vivió un año y fundó dos inmobiliarias. En Bahía de los Ángeles, frente a una fogata, recordó la noche que cambió su forma de entender los viajes.</p>
+          <button class="link-fire" onclick="abrirCap(22)">▶ Ver capítulo 22</button>
+        </div>
+        <div class="tl reveal">
+          <small>Europa · Cap. 26–28</small>
+          <h3>Hasta el fin del mundo</h3>
+          <p>La casa natal de Nikola Tesla en Croacia, los Alpes Suizos y la ruta de Budapest a Zagreb. La aventura sigue…</p>
+          <button class="link-fire" onclick="abrirCap(28)">▶ Ver el último capítulo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ELVIS -->
+<section id="elvis">
+  <div class="paws" aria-hidden="true"></div>
+  <div class="wrap elvis">
+    <div class="collage reveal">
+      <button class="polaroid p1" onclick="abrirCap(9)" aria-label="Ver capítulo 9: John y Elvis rumbo a Cartagena">
+        <img data-burn src="img/fotos/elvis-cartagena.jpg" alt="John abrazando a Elvis en un balcón">
+        <span>Elvis &amp; John 🐾</span>
+      </button>
+      <button class="polaroid p2" onclick="abrirCap(12)" aria-label="Ver capítulo 12: Punta Arena con su amigo real">
+        <img data-burn src="img/fotos/elvis-playa.jpg" alt="John y Elvis en la playa de Cartagena">
+        <span>Playa en Cartagena</span>
+      </button>
+    </div>
+    <div class="reveal">
+      <span class="eyebrow">El amigo real</span>
+      <h2>Se llama <span class="script">Elvis</span></h2>
+      <p>El “amigo real” de esta historia tiene cuatro patas. Elvis acompaña a John en la ruta: cruzó cielos con él rumbo a Cartagena, se tiró a la arena del Caribe y es parte de cada capítulo.</p>
+      <p>Porque los mejores compañeros de viaje no necesitan mapa: solo necesitan ir contigo.</p>
+      <div class="chips">
+        <button class="btn btn-ghost" onclick="abrirCap(9)">▶ Cap. 09 · Rumbo a Cartagena</button>
+        <button class="btn btn-ghost" onclick="abrirCap(12)">▶ Cap. 12 · Punta Arena</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LA MOTO -->
+<section id="moto">
+  <div class="moto-big" aria-hidden="true">PAN AMERICA</div>
+  <div class="wrap">
+    <div class="moto">
+      <div class="moto-img reveal">
+        <img data-burn src="img/fotos/pan-america.jpg" alt="Harley-Davidson Pan America 1250 gris de John Ker">
+        <div class="shine" aria-hidden="true"></div>
+      </div>
+      <div class="reveal">
+        <span class="eyebrow">La máquina</span>
+        <h2><span class="chrome">Harley-Davidson</span><br>Pan America 1250</h2>
+        <div class="model">La compañera de acero</div>
+        <div class="specs">
+          <div class="spec"><small>Modelo</small><b>Pan America 1250</b></div>
+          <div class="spec"><small>Color</small><b><span class="swatch"></span>Gris</b></div>
+          <div class="spec"><small>Comprada en</small><b>Huntington Beach, California</b></div>
+          <div class="spec"><small>Ha rodado por</small><b>Baja California y Europa</b></div>
+        </div>
+        <button class="btn btn-fire" onclick="abrirCap(20)">▶ Así la compró</button>
+      </div>
+    </div>
+    <div class="ride" id="ride"></div>
+    <button class="casa reveal" onclick="abrirCap(10)">
+      <img src="https://i.ytimg.com/vi/vvs0scRZVuA/hqdefault.jpg" alt="">
+      <div><span class="tag">También en la ruta</span><b style="display:block;font-size:1.1rem;margin-top:6px">El motor casa</b><span style="color:var(--muted);font-size:.9rem">El hogar sobre ruedas que llegó a Cartagena con la Harley justo atrás · Cap. 10–11</span></div>
+    </button>
+  </div>
+</section>
+
+<!-- MAPA -->
+<section id="mapa">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div><span class="eyebrow">La ruta</span><h2>Cada punto, <span class="fire-text">una historia</span></h2></div>
+      <p>Toca un punto del mapa para ver el capítulo que se grabó ahí. De Colombia a Baja California y de los Alpes a Croacia.</p>
+    </div>
+    <div class="map-grid reveal">
+      <div id="map"></div>
+      <div class="legs" id="legs"></div>
+    </div>
+  </div>
+</section>
+
+<!-- CAPÍTULOS -->
+<section id="capitulos">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div><span class="eyebrow">La serie</span><h2>Todos los <span class="fire-text">capítulos</span></h2></div>
+      <p>Cada capítulo es un comienzo, cada ruta una historia. Míralos en orden o salta al lugar que más te llame.</p>
+    </div>
+    <div class="filters" id="filters"></div>
+    <div class="grid" id="grid"></div>
+    <div class="more"><a class="btn btn-ghost" href="https://www.youtube.com/@JOHNKERYSUAMIGOREALOFICIAL/videos" target="_blank" rel="noopener">Ver todo en YouTube →</a></div>
+    <p class="sync" id="sync"></p>
+  </div>
+</section>
+
+<!-- INSTAGRAM -->
+<section id="instagram" style="padding-top:20px">
+  <div class="wrap">
+    <div class="ig-head reveal">
+      <img src="img/fotos/john-y-elvis.jpg" alt="">
+      <div><b>@johnkerysuamigorealoficial</b><span>🏍️ Explorando el mundo sobre dos ruedas · 🌍 Rutas reales, historias sin filtros</span></div>
+      <a class="btn btn-ghost" href="https://www.instagram.com/johnkerysuamigorealoficial/" target="_blank" rel="noopener">Seguir en Instagram</a>
+    </div>
+    <div class="ig-grid reveal" id="ig"></div>
+  </div>
+</section>
+
+<!-- MARCAS -->
+<section id="marcas">
+  <div class="wrap brands">
+    <div class="reveal">
+      <span class="eyebrow">Marcas y colaboraciones</span>
+      <h2>Rueda con <span class="fire-text">nosotros</span></h2>
+      <p>Una audiencia de viajeros y moteros que busca rutas reales, equipo probado y destinos auténticos. Ideal para marcas de motos, equipo, turismo, hospedaje y gastronomía.</p>
+      <a class="btn btn-fire" href="#contacto">Hablemos</a>
+    </div>
+    <div class="kpis reveal">
+      <div class="kpi"><b class="fire-text" id="k-views">—</b><span>Vistas de la serie</span></div>
+      <div class="kpi"><b class="fire-text" id="k-subs">—</b><span>Suscriptores en YouTube</span></div>
+      <div class="kpi"><b class="fire-text" id="k-top">—</b><span>Vistas en el capítulo más visto</span></div>
+      <div class="kpi"><b class="fire-text" id="k-videos">—</b><span>Videos publicados</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- REDES -->
+<section id="contacto" style="padding-top:0">
+  <div class="wrap">
+    <div class="cta reveal">
+      <img class="lg" src="img/marca/logo-960.webp" alt="John Ker y su Amigo Real">
+      <h2>Súbete a <span class="fire-text">la ruta</span></h2>
+      <p>Suscríbete para no perderte ningún capítulo y sigue a John y a Elvis en redes para vivir el viaje en tiempo real.</p>
+      <div class="socials">
+        <a class="soc yt" href="https://www.youtube.com/@JOHNKERYSUAMIGOREALOFICIAL?sub_confirmation=1" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8zM9.6 15.6V8.4l6.3 3.6-6.3 3.6z"/></svg>YouTube</a>
+        <a class="soc" href="https://www.instagram.com/johnkerysuamigorealoficial/" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>Instagram</a>
+        <a class="soc" href="https://www.facebook.com/johnkerysuamigorealoficial" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M24 12a12 12 0 1 0-13.9 11.9v-8.4H7.1V12h3V9.4c0-3 1.8-4.7 4.5-4.7 1.3 0 2.7.2 2.7.2v3h-1.5c-1.5 0-2 .9-2 1.9V12h3.4l-.5 3.5h-2.9v8.4A12 12 0 0 0 24 12z"/></svg>Facebook</a>
+        <a class="soc" href="https://www.tiktok.com/@johnkerysuamigorealoficial" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.6 6.7a4.8 4.8 0 0 1-3.8-4.2V2h-3.4v13.7a2.9 2.9 0 1 1-2-2.7V9.5a6.3 6.3 0 1 0 5.4 6.2V8.8a8.2 8.2 0 0 0 4.8 1.5V6.9l-1-.2z"/></svg>TikTok</a>
+        <a class="soc pend" href="#" title="Pendiente: número de WhatsApp de John" onclick="return false">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-3.3-.8-2.8-1.1-4.5-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6-.3.4c-.1.1-.2.3-.1.5.6 1 1.3 1.7 2.3 2.3.3.2.5.1.6 0l.8-.9c.2-.2.3-.2.5-.1l2 1c.2.1.4.2.4.3.1.2.1.7-.1 1.2z"/></svg>WhatsApp</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <img src="img/marca/logo-360.webp" alt="John Ker y su Amigo Real">
+    <span>© 2026 John Ker y su Amigo Real · Viajando el mundo sobre dos ruedas</span>
+    <div class="mini">
+      <a href="https://www.youtube.com/@JOHNKERYSUAMIGOREALOFICIAL" target="_blank" rel="noopener">YouTube</a>
+      <a href="https://www.instagram.com/johnkerysuamigorealoficial/" target="_blank" rel="noopener">Instagram</a>
+      <a href="https://www.facebook.com/johnkerysuamigorealoficial" target="_blank" rel="noopener">Facebook</a>
+      <a href="https://www.tiktok.com/@johnkerysuamigorealoficial" target="_blank" rel="noopener">TikTok</a>
+      <a href="#top">Arriba ↑</a>
+    </div>
+  </div>
+</footer>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Capítulo" onclick="if(event.target===this)cerrar()">
+  <button class="x" onclick="cerrar()" aria-label="Cerrar">×</button>
+  <div class="box">
+    <div class="frame" id="frame"></div>
+    <div class="info" id="info"></div>
+  </div>
+</div>
+
+<!-- Datos de los capítulos: los genera scripts/actualizar-capitulos.mjs desde YouTube -->
+<script src="data/capitulos.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const D = window.JOHNKER || { capitulos: [], canal: {} };
+const CAPS = D.capitulos;
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const porNum = n => CAPS.find(c => c.num === n);
+const thumb = (id, q = 'hqdefault') => `https://i.ytimg.com/vi/${id}/${q}.jpg`;
+const fmt = n => n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace('.0', '') + 'K' : String(n);
+const pad = n => String(n).padStart(2, '0');
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const ETAPAS = { todos: 'Todos', origen: 'El origen', colombia: 'Colombia', norte: 'Norteamérica', europa: 'Europa' };
+
+/* ---------- Efecto fuego: las fotos aparecen quemándose ---------- */
+const Burn = (() => {
+  const NW = 220, NH = 140; // resolución del ruido (se escala con suavizado)
+  function ruido(w, h) {
+    // ruido de valor fractal, normalizado 0..1
+    const r = (x, y, s) => { const n = Math.sin(x * 127.1 + y * 311.7 + s * 74.7) * 43758.5453; return n - Math.floor(n); };
+    const smooth = t => t * t * (3 - 2 * t);
+    const seed = Math.random() * 100, out = new Float32Array(w * h);
+    let min = 9, max = -9;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      let v = 0, amp = 1, f = 1 / 28, tot = 0;
+      for (let o = 0; o < 4; o++) {
+        const fx = x * f, fy = y * f, ix = Math.floor(fx), iy = Math.floor(fy), tx = smooth(fx - ix), ty = smooth(fy - iy);
+        const a = r(ix, iy, seed + o), b = r(ix + 1, iy, seed + o), c = r(ix, iy + 1, seed + o), d = r(ix + 1, iy + 1, seed + o);
+        v += amp * (a + (b - a) * tx + (c - a) * ty + (a - b - c + d) * tx * ty); tot += amp; amp *= .5; f *= 2;
+      }
+      // el fuego avanza de abajo hacia arriba
+      v = v / tot * .65 + (1 - y / h) * .35;
+      out[y * w + x] = v; if (v < min) min = v; if (v > max) max = v;
+    }
+    for (let i = 0; i < out.length; i++) out[i] = (out[i] - min) / (max - min);
+    return out;
+  }
+  function cubrir(ctx, img, W, H, pos) {
+    const [px, py] = (pos || '50% 50%').split(' ').map(v => parseFloat(v) / 100);
+    const s = Math.max(W / img.naturalWidth, H / img.naturalHeight), dw = img.naturalWidth * s, dh = img.naturalHeight * s;
+    ctx.drawImage(img, (W - dw) * px, (H - dh) * py, dw, dh);
+  }
+  // Dibuja `img` sobre `canvas` apareciendo con borde de fuego. Llama a `fin` al terminar.
+  function quemar(canvas, img, pos, dur, fin) {
+    const dpr = Math.min(devicePixelRatio || 1, 1.5);
+    const W = canvas.width = Math.max(1, Math.round(canvas.offsetWidth * dpr)), H = canvas.height = Math.max(1, Math.round(canvas.offsetHeight * dpr));
+    const ctx = canvas.getContext('2d');
+    const foto = document.createElement('canvas'); foto.width = W; foto.height = H; cubrir(foto.getContext('2d'), img, W, H, pos);
+    const m = document.createElement('canvas'); m.width = NW; m.height = NH; const mc = m.getContext('2d'), md = mc.createImageData(NW, NH);
+    const g = document.createElement('canvas'); g.width = NW; g.height = NH; const gc = g.getContext('2d'), gd = gc.createImageData(NW, NH);
+    const n = ruido(NW, NH), banda = .09, t0 = performance.now();
+    (function frame(now) {
+      const p = Math.min(1, (now - t0) / dur), t = p * (1 + banda * 2) - banda;
+      for (let i = 0; i < n.length; i++) {
+        const d = t - n[i], j = i * 4;
+        md.data[j + 3] = d > 0 ? Math.min(255, d / .015 * 255) : 0;              // parte ya visible
+        if (d > -banda && d < .02) {                                              // borde encendido
+          const k = d < 0 ? 1 + d / banda : 1 - d / .02;
+          gd.data[j] = 255; gd.data[j + 1] = 60 + 190 * k * k; gd.data[j + 2] = 20 * k; gd.data[j + 3] = 255 * k;
+        } else gd.data[j + 3] = 0;
+      }
+      mc.putImageData(md, 0, 0); gc.putImageData(gd, 0, 0);
+      ctx.globalCompositeOperation = 'source-over'; ctx.clearRect(0, 0, W, H); ctx.drawImage(foto, 0, 0);
+      ctx.globalCompositeOperation = 'destination-in'; ctx.drawImage(m, 0, 0, W, H);
+      ctx.globalCompositeOperation = 'lighter'; ctx.filter = 'blur(2px)'; ctx.drawImage(g, 0, 0, W, H); ctx.filter = 'none'; ctx.drawImage(g, 0, 0, W, H);
+      ctx.globalCompositeOperation = 'source-over';
+      p < 1 ? requestAnimationFrame(frame) : fin && fin();
+    })(t0);
+  }
+  // Para imágenes de las secciones: aparecen quemándose cuando entran en pantalla
+  function aparecer(img) {
+    if (!img.complete) { img.addEventListener('load', () => aparecer(img), { once: true }); img.addEventListener('error', () => img.removeAttribute('data-burn'), { once: true }); return; }
+    if (reduce || !img.naturalWidth) { img.removeAttribute('data-burn'); return; }
+    const cv = document.createElement('canvas');
+    Object.assign(cv.style, { position: 'absolute', left: img.offsetLeft + 'px', top: img.offsetTop + 'px', width: img.offsetWidth + 'px', height: img.offsetHeight + 'px', zIndex: 2, pointerEvents: 'none', borderRadius: getComputedStyle(img).borderRadius });
+    img.parentElement.appendChild(cv);
+    quemar(cv, img, getComputedStyle(img).objectPosition, 1500, () => { img.removeAttribute('data-burn'); requestAnimationFrame(() => cv.remove()); });
+  }
+  return { quemar, aparecer };
+})();
+
+if (!reduce) document.documentElement.classList.add('js-burn');
+
+/* ---------- Intro con el logo animado ---------- */
+(function intro() {
+  const box = document.getElementById('intro'), v = document.getElementById('introVideo');
+  const fin = () => { box.classList.add('hide'); setTimeout(() => box.remove(), 900); sessionStorage.setItem('jk-intro', '1'); };
+  if (reduce || sessionStorage.getItem('jk-intro')) { box.remove(); return; }
+  v.src = innerWidth < 760 ? 'img/marca/intro-logo-movil.mp4' : 'img/marca/intro-logo.mp4'; // versión liviana según pantalla
+  document.getElementById('skipIntro').onclick = fin;
+  v.addEventListener('ended', fin);
+  v.play().catch(fin);
+  setTimeout(fin, 6000); // por si el video no carga
+})();
+
+/* ---------- Números ---------- */
+const totalVistas = CAPS.reduce((s, c) => s + (c.vistas || 0), 0);
+const subs = (D.canal.suscriptores || '').replace(/\s*suscriptores/i, '').replace(/\s+/g, '');
+document.getElementById('k-views').textContent = '+' + fmt(totalVistas);
+document.getElementById('k-subs').textContent = subs || '—';
+document.getElementById('k-videos').textContent = D.canal.videos ?? '—';
+document.getElementById('k-top').textContent = fmt(Math.max(0, ...CAPS.map(c => c.vistas || 0)));
+document.querySelector('[data-count="caps"]').dataset.to = CAPS.length;
+document.querySelector('[data-count="views"]').dataset.to = totalVistas;
+function contar(el) {
+  const to = +el.dataset.to || 0, t0 = performance.now(), dur = 1600;
+  const step = t => { const p = Math.min(1, (t - t0) / dur), v = Math.round(to * (1 - Math.pow(1 - p, 3)));
+    el.textContent = (to >= 1000 ? '+' : '') + fmt(v); if (p < 1) requestAnimationFrame(step); };
+  reduce ? el.textContent = (to >= 1000 ? '+' : '') + fmt(to) : requestAnimationFrame(step);
+}
+if (D.actualizado) document.getElementById('sync').textContent =
+  'Capítulos sincronizados con YouTube el ' + new Date(D.actualizado).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+
+/* ---------- Cinta de lugares ---------- */
+const LUGARES = [...new Set(CAPS.slice().reverse().map(c => c.lugar).filter(l => l && !/pandemia|comienzo|fin de año|super bowl|costa/i.test(l)))];
+const tk = LUGARES.map(l => `<span>${esc(l)}</span>`).join('');
+document.getElementById('ticker').innerHTML = tk + tk;
+
+/* ---------- Último capítulo ---------- */
+const ult = CAPS[0];
+if (ult) document.getElementById('latest').innerHTML = `
+  <button class="thumb" onclick="abrirCap(${ult.num})" aria-label="Ver capítulo ${ult.num}">
+    <img data-burn src="${thumb(ult.id, 'maxresdefault')}" onerror="this.src='${thumb(ult.id)}'" alt="">
+    <span class="play"><i></i></span>
+  </button>
+  <div style="position:relative">
+    <span class="tag">🔥 Nuevo · Capítulo ${ult.num}</span>
+    <h2>${esc(ult.titulo)}</h2>
+    ${ult.lugar ? `<div class="place">📍 ${esc(ult.lugar)}</div>` : ''}
+    <p>${esc(ult.descripcion)}</p>
+    <button class="btn btn-fire" onclick="abrirCap(${ult.num})">▶ Ver capítulo</button>
+  </div>`;
+
+/* ---------- Capítulos de la moto ---------- */
+const RIDE = [[20, 'La compra'], [21, 'El estreno'], [23, 'Falla en el desierto'], [28, 'Falla en Europa']];
+document.getElementById('ride').innerHTML = RIDE.map(([n, t]) => { const c = porNum(n); return c ? `
+  <button class="reveal" onclick="abrirCap(${n})"><img loading="lazy" src="${thumb(c.id)}" alt=""><div><small>CAP. ${pad(n)} · ${t}</small><b>${esc(c.titulo)}</b></div></button>` : ''; }).join('');
+
+/* ---------- Grilla de capítulos ---------- */
+const grid = document.getElementById('grid'), fbox = document.getElementById('filters');
+function render(f) {
+  grid.innerHTML = CAPS.filter(c => f === 'todos' || c.etapa === f).map((c, i) => `
+    <button class="ep" style="animation-delay:${Math.min(i, 12) * 40}ms" onclick="abrirCap(${c.num})">
+      <div class="im"><img loading="lazy" src="${thumb(c.id)}" alt=""><span class="num">CAP. ${pad(c.num)}</span><span class="dur">${c.duracion}</span></div>
+      <div class="body"><h3>${esc(c.titulo)}</h3><div class="meta"><span>📍 ${esc(c.lugar || ETAPAS[c.etapa] || '')}</span><span>${fmt(c.vistas)} vistas</span></div></div>
+    </button>`).join('');
+}
+fbox.innerHTML = Object.entries(ETAPAS).map(([k, v], i) => `<button class="chip ${i ? '' : 'on'}" data-f="${k}" aria-pressed="${!i}">${v}</button>`).join('');
+fbox.onclick = ev => { const b = ev.target.closest('.chip'); if (!b) return;
+  fbox.querySelectorAll('.chip').forEach(c => { c.classList.remove('on'); c.setAttribute('aria-pressed', 'false'); });
+  b.classList.add('on'); b.setAttribute('aria-pressed', 'true'); render(b.dataset.f); };
+render('todos');
+
+/* ---------- Mapa ---------- */
+const map = L.map('map', { scrollWheelZoom: false, worldCopyJump: true }).setView([25, -40], 2);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 18 }).addTo(map);
+const icon = L.divIcon({ className: '', html: '<div class="pin"></div>', iconSize: [18, 18], iconAnchor: [9, 9] });
+const puntos = {};
+CAPS.filter(c => c.lat).forEach(c => { const k = c.lat + ',' + c.lng; (puntos[k] ||= []).push(c); });
+Object.values(puntos).forEach(lista => {
+  lista.sort((a, b) => a.num - b.num);
+  const p = lista[lista.length - 1];
+  L.marker([p.lat, p.lng], { icon }).addTo(map).bindPopup(`<div class="pop">
+    <img src="${thumb(p.id)}" alt=""><b>📍 ${esc(p.lugar)}</b>
+    ${lista.map(c => `<div class="row"><span>Cap. ${pad(c.num)} · ${esc(c.titulo)}</span><button onclick="abrirCap(${c.num})" aria-label="Ver capítulo ${c.num}">▶</button></div>`).join('')}
+  </div>`);
+});
+const LEGS = [
+  { t: 'Cap. 03–19', h: 'Colombia', p: 'Medellín, Entrerríos, Cartagena, Punta Arena y Santa Fe de Antioquia.', b: [[5.9, -76.3], [10.8, -75.0]] },
+  { t: 'Cap. 20–25', h: 'Baja California', p: 'Huntington Beach, Ensenada, San Felipe, Bahía de los Ángeles, San Javier y Loreto.', b: [[25.5, -119], [34.2, -110.5]] },
+  { t: 'Cap. 26–28', h: 'Europa', p: 'Los Alpes Suizos, la casa de Tesla en Croacia y de Budapest a Zagreb.', b: [[44, 6.5], [48.2, 20]] },
+];
+const legBox = document.getElementById('legs');
+legBox.innerHTML = LEGS.map((l, i) => `<button class="leg" data-i="${i}"><small>${l.t}</small><h3>${l.h}</h3><p>${l.p}</p></button>`).join('')
+  + `<button class="leg" data-i="all"><small>Vista completa</small><h3>El mundo</h3><p>Toda la ruta hasta hoy.</p></button>`;
+legBox.onclick = ev => {
+  const d = ev.target.closest('.leg'); if (!d) return;
+  legBox.querySelectorAll('.leg').forEach(x => x.classList.remove('on')); d.classList.add('on');
+  d.dataset.i === 'all' ? map.flyTo([25, -40], 2) : map.flyToBounds(LEGS[d.dataset.i].b, { padding: [20, 20] });
+};
+
+/* ---------- Instagram ---------- */
+const IG = ['DcAF1Q1Ddim', 'DembNa7MMMj', 'DeJxczsxFGO', 'Dd89X8ZRe3m', 'Dd4xr92seGt', 'DcZsrsetC-J', 'DcWL8XMuCZG', 'DcUuweQNyyL', 'Db9e49YMXkF', 'Db1D0JbMLdn', 'DbwdJGNsrnB'];
+document.getElementById('ig').innerHTML = IG.map((id, i) =>
+  `<a ${i === 0 ? 'class="wide"' : ''} href="https://www.instagram.com/johnkerysuamigorealoficial/${i === 0 ? 'p' : 'reel'}/${id}/" target="_blank" rel="noopener"><img loading="lazy" src="img/instagram/${id}.jpg" alt="Publicación de Instagram de John Ker"></a>`).join('');
+
+/* ---------- Modal del capítulo ---------- */
+let ultimoFoco = null;
+function abrirCap(n) {
+  const c = porNum(n); if (!c) return;
+  const i = CAPS.indexOf(c), prev = CAPS[i + 1], next = CAPS[i - 1];
+  ultimoFoco = document.activeElement;
+  document.getElementById('frame').innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${c.id}?autoplay=1&rel=0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen title="Capítulo ${c.num}"></iframe>`;
+  document.getElementById('info').innerHTML = `
+    <span class="tag">Capítulo ${pad(c.num)}</span>
+    <h3>${esc(c.titulo)}</h3>
+    ${c.lugar ? `<div class="place">📍 ${esc(c.lugar)}</div>` : ''}
+    <p>${esc(c.descripcion)}</p>
+    <div class="nav2">
+      ${prev ? `<button class="btn btn-ghost" onclick="abrirCap(${prev.num})">← Cap. ${pad(prev.num)}</button>` : ''}
+      ${next ? `<button class="btn btn-fire" onclick="abrirCap(${next.num})">Cap. ${pad(next.num)} →</button>` : ''}
+      <a class="btn btn-ghost" href="https://www.youtube.com/watch?v=${c.id}" target="_blank" rel="noopener">Comentar en YouTube</a>
+    </div>`;
+  const m = document.getElementById('modal'); m.classList.add('open'); m.scrollTop = 0;
+  m.querySelector('.x').focus();
+  document.body.style.overflow = 'hidden';
+  map.closePopup();
+}
+function cerrar() {
+  document.getElementById('modal').classList.remove('open');
+  document.getElementById('frame').innerHTML = '';
+  document.body.style.overflow = '';
+  if (ultimoFoco) ultimoFoco.focus();
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrar(); });
+
+/* ---------- Menú y header ---------- */
+const hdr = document.querySelector('header'), burger = document.querySelector('.burger'), menu = document.getElementById('menu');
+addEventListener('scroll', () => hdr.classList.toggle('solid', scrollY > 40), { passive: true });
+burger.onclick = () => burger.setAttribute('aria-expanded', menu.classList.toggle('open'));
+menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { menu.classList.remove('open'); burger.setAttribute('aria-expanded', 'false'); }));
+
+/* ---------- Chispas de fuego en la portada ---------- */
+(function sparks() {
+  if (reduce) return;
+  const cv = document.getElementById('sparks'), ctx = cv.getContext('2d'); let W, H, P = [];
+  const size = () => { W = cv.width = cv.offsetWidth * devicePixelRatio; H = cv.height = cv.offsetHeight * devicePixelRatio; };
+  size(); addEventListener('resize', size);
+  const nueva = () => ({ x: Math.random() * W, y: H + 10, r: (Math.random() * 1.8 + .6) * devicePixelRatio, vy: -(Math.random() * 1.2 + .5) * devicePixelRatio, vx: (Math.random() - .5) * .6 * devicePixelRatio, life: 0, max: 200 + Math.random() * 260, h: 20 + Math.random() * 25 });
+  for (let i = 0; i < 70; i++) { const p = nueva(); p.y = Math.random() * H; P.push(p); }
+  let visible = true; new IntersectionObserver(([e]) => visible = e.isIntersecting).observe(cv);
+  (function loop() {
+    if (visible) {
+      ctx.clearRect(0, 0, W, H);
+      P.forEach((p, i) => {
+        p.x += p.vx + Math.sin((p.life + i) / 30) * .3; p.y += p.vy; p.life++;
+        const a = Math.max(0, 1 - p.life / p.max);
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7);
+        ctx.fillStyle = `hsla(${p.h},100%,${55 + a * 20}%,${a})`; ctx.shadowBlur = 12; ctx.shadowColor = `hsla(${p.h},100%,55%,${a})`; ctx.fill();
+        if (p.life > p.max || p.y < -10) P[i] = nueva();
+      });
+    }
+    requestAnimationFrame(loop);
+  })();
+})();
+
+/* ---------- Portada: fotos de John que cambian solas ---------- */
+const SLIDES = [
+  { img: 'img/fotos/john-bienvenida.jpg', pos: '42% 30%', lugar: '📍 Santa Fe de Antioquia, Colombia' },
+  { img: 'img/fotos/john-y-elvis.jpg', pos: '55% 80%', lugar: '🐾 Con Elvis, mi amigo real' },
+  { img: 'img/fotos/john-en-moto.jpg', pos: '50% 35%', lugar: '🏍️ En la Pan America 1250 · Baja California' },
+  { img: 'img/fotos/john-puente.jpg', pos: '85% 40%', lugar: '📍 Puente de Occidente, Colombia' },
+  { img: 'img/fotos/john-baja.jpg', pos: '62% 40%', lugar: '📍 San Felipe, Baja California' },
+];
+(function slideshow() {
+  const box = document.getElementById('slides'), dots = document.getElementById('dots'), place = document.getElementById('slidePlace');
+  const DUR = 6000;
+  box.innerHTML = SLIDES.map((s, i) => `<div class="slide${i ? '' : ' on'}"><img src="${s.img}" alt="" style="object-position:${s.pos}" ${i ? '' : 'fetchpriority="high"'}></div>`).join('') + '<canvas class="burn-cv"></canvas>';
+  const cv = box.querySelector('.burn-cv');
+  dots.innerHTML = SLIDES.map((s, i) => `<button type="button" aria-label="Foto ${i + 1}"><i></i></button>`).join('');
+  dots.style.setProperty('--dur', DUR + 'ms');
+  let cur = 0, timer;
+  let ardiendo = false;
+  const show = (n, primera) => {
+    if (ardiendo) return;
+    const sig = (n + SLIDES.length) % SLIDES.length;
+    const cambiar = () => { box.querySelectorAll('.slide').forEach((el, i) => el.classList.toggle('on', i === sig)); };
+    const img = box.querySelectorAll('.slide img')[sig];
+    if (primera || reduce || !img.complete || !img.naturalWidth) cambiar();
+    else { ardiendo = true; Burn.quemar(cv, img, SLIDES[sig].pos, 1700, () => { cambiar(); requestAnimationFrame(() => { cv.getContext('2d').clearRect(0, 0, cv.width, cv.height); ardiendo = false; }); }); }
+    cur = sig;
+    dots.querySelectorAll('button').forEach((b, i) => { b.classList.remove('on'); b.classList.toggle('done', i < cur); b.setAttribute('aria-current', i === cur); });
+    void dots.offsetWidth; dots.children[cur].classList.add('on');
+    place.textContent = SLIDES[cur].lugar;
+    clearTimeout(timer); if (!reduce) timer = setTimeout(() => show(cur + 1), DUR);
+  };
+  dots.onclick = e => { const b = e.target.closest('button'); if (b) show([...dots.children].indexOf(b)); };
+  show(0, true);
+})();
+
+/* Texto que se escribe solo con los lugares de la ruta */
+(function typed() {
+  const el = document.getElementById('typed');
+  const W = ['Medellín', 'Cartagena', 'Santa Fe de Antioquia', 'Baja California', 'los Alpes Suizos', 'Croacia', 'donde nos lleve la carretera'];
+  if (reduce) { el.textContent = W[0]; return; }
+  let w = 0, c = 0, borrando = false;
+  (function tick() {
+    const palabra = W[w];
+    c += borrando ? -1 : 1;
+    el.textContent = palabra.slice(0, c);
+    let t = borrando ? 40 : 85;
+    if (!borrando && c === palabra.length) { borrando = true; t = 1600; }
+    else if (borrando && c === 0) { borrando = false; w = (w + 1) % W.length; t = 300; }
+    setTimeout(tick, t);
+  })();
+})();
+document.getElementById('verUltimo').onclick = () => CAPS[0] && abrirCap(CAPS[0].num);
+
+/* ---------- Carrusel automático de la ruta ---------- */
+(function carrusel() {
+  const track = document.getElementById('track');
+  const vistos = new Set(), paradas = [];
+  CAPS.forEach(c => { if (c.lugar && c.lat && !vistos.has(c.lugar)) { vistos.add(c.lugar); paradas.push(c); } });
+  paradas.sort((a, b) => a.num - b.num);
+  const pais = { colombia: '📍 Colombia', norte: c => /Huntington/i.test(c.lugar) ? '📍 Estados Unidos' : '📍 México', europa: c => /Suiz/i.test(c.lugar) ? '📍 Suiza' : /Budapest/i.test(c.lugar) ? '📍 Hungría' : '📍 Croacia' };
+  const etiqueta = c => { const p = pais[c.etapa]; return typeof p === 'function' ? p(c) : p || ''; };
+  track.innerHTML = paradas.map(c => `
+    <button class="card-ruta" onclick="abrirCap(${c.num})" aria-label="Capítulo ${c.num}: ${esc(c.lugar)}">
+      <img loading="lazy" src="${thumb(c.id, 'hqdefault')}" alt="">
+      <span class="flag">${etiqueta(c)}</span>
+      <span class="txt"><small>Cap. ${pad(c.num)}</small><b>${esc(c.lugar)}</b></span>
+    </button>`).join('');
+  const paso = () => { const card = track.querySelector('.card-ruta'); return card ? card.offsetWidth + 18 : 300; };
+  const mover = dir => {
+    const max = track.scrollWidth - track.clientWidth - 4;
+    if (dir > 0 && track.scrollLeft >= max) track.scrollTo({ left: 0 });
+    else if (dir < 0 && track.scrollLeft <= 0) track.scrollTo({ left: max });
+    else track.scrollBy({ left: dir * paso() });
+  };
+  document.getElementById('carNext').onclick = () => mover(1);
+  document.getElementById('carPrev').onclick = () => mover(-1);
+  let pausa = false, visible = false;
+  ['mouseenter', 'focusin', 'touchstart'].forEach(ev => track.addEventListener(ev, () => pausa = true, { passive: true }));
+  ['mouseleave', 'focusout'].forEach(ev => track.addEventListener(ev, () => pausa = false));
+  track.addEventListener('touchend', () => setTimeout(() => pausa = false, 4000), { passive: true });
+  new IntersectionObserver(([e]) => visible = e.isIntersecting).observe(track);
+  if (!reduce) setInterval(() => { if (!pausa && visible && !document.hidden) mover(1); }, 3200);
+})();
+
+/* ---------- Animaciones al aparecer ---------- */
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (!e.isIntersecting) return;
+  e.target.classList.add('in');
+  e.target.querySelectorAll('[data-to]').forEach(contar);
+  e.target.querySelectorAll('img[data-burn]').forEach(Burn.aparecer);
+  io.unobserve(e.target);
+}), { threshold: .12 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

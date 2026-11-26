@@ -1,0 +1,33 @@
+# Todos los días trae los capítulos nuevos del canal de YouTube de John Ker.
+# Si hay cambios, los guarda en el repositorio y Cloudflare Pages publica la página sola.
+name: Actualizar capítulos desde YouTube
+
+on:
+  schedule:
+    - cron: "0 11 * * *" # 6:00 a. m. hora de Colombia
+  workflow_dispatch: # permite correrlo a mano desde la pestaña Actions
+
+permissions:
+  contents: write
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Traer capítulos del canal
+        working-directory: john-ker-web
+        run: node scripts/actualizar-capitulos.mjs
+
+      - name: Guardar cambios
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add john-ker-web/data/capitulos.js
+          git diff --cached --quiet || git commit -m "Actualizar capítulos desde YouTube"
+          git push

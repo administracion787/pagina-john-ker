@@ -1,0 +1,6 @@
+# Reglas de caché para Cloudflare Pages
+/img/*
+  Cache-Control: public, max-age=2592000
+
+/data/*
+  Cache-Control: public, max-age=3600
