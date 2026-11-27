@@ -1,6 +1,6 @@
 // Archivo generado por scripts/actualizar-capitulos.mjs — no editar a mano.
 window.JOHNKER = {
-  "actualizado": "2026-11-26T11:52:04.022Z",
+  "actualizado": "2026-11-27T11:49:23.528Z",
   "canal": {
     "url": "https://www.youtube.com/@JOHNKERYSUAMIGOREALOFICIAL",
     "suscriptores": "1.31 K suscriptores",
